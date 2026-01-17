@@ -1,0 +1,49 @@
+name: Update Formula
+
+on:
+  repository_dispatch:
+    types: [update-formula]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (leave empty to fetch latest from PyPI)'
+        required: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.client_payload.version }}" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(curl -s https://pypi.org/pypi/zpace/json | jq -r '.info.version')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update formula
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Get SHA256 from PyPI
+          SHA256=$(curl -s https://pypi.org/pypi/zpace/${VERSION}/json | jq -r '.urls[] | select(.packagetype == "sdist") | .digests.sha256')
+          
+          # Update URL and SHA256 in formula
+          sed -i "s|zpace-[0-9.]*\.tar\.gz|zpace-${VERSION}.tar.gz|g" Formula/zpace.rb
+          sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA256}\"|g" Formula/zpace.rb
+          
+          echo "Updated to version ${VERSION}"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/zpace.rb
+          git diff --cached --quiet || git commit -m "Update zpace to ${{ steps.version.outputs.version }}"
+          git push
