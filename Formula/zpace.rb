@@ -3,20 +3,20 @@ class Zpace < Formula
 
   desc "A CLI tool to discover what's consuming your disk space"
   homepage "https://github.com/AzisK/Zpace"
-  url "https://files.pythonhosted.org/packages/source/z/zpace/zpace-0.4.2.tar.gz"
-  sha256 "20f4d43c1954ee09fcb8fd1a81c9005ce6028bac94ab7b5196ab402386b7a569"
+  url "https://files.pythonhosted.org/packages/source/z/zpace/zpace-0.4.3.tar.gz"
+  sha256 "97336def5eb7a42c23ba37b1bb6fb7eeff4e89839be516bcfadfa9f93a80b88e"
   license "Apache-2.0"
 
   depends_on "python"
 
   resource "argparse" do
     url "https://files.pythonhosted.org/packages/18/dd/e617cfc3f6210ae183374cd9f6a26b20514bbb5a792af97949c5aacddf0f/argparse-1.4.0.tar.gz"
-    sha256 "20f4d43c1954ee09fcb8fd1a81c9005ce6028bac94ab7b5196ab402386b7a569"
+    sha256 "97336def5eb7a42c23ba37b1bb6fb7eeff4e89839be516bcfadfa9f93a80b88e"
   end
 
   resource "tqdm" do
     url "https://files.pythonhosted.org/packages/a7/81/7f3dce7bfed3f4d5a228e679aa06d28b72c8e1f56d35e5c8a36cfed7a2ab/tqdm-4.67.1.tar.gz"
-    sha256 "20f4d43c1954ee09fcb8fd1a81c9005ce6028bac94ab7b5196ab402386b7a569"
+    sha256 "97336def5eb7a42c23ba37b1bb6fb7eeff4e89839be516bcfadfa9f93a80b88e"
   end
 
   def install
