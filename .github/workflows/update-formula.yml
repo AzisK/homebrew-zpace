@@ -35,7 +35,8 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14"
+          enable-cache: false
 
       - name: Update formula
         run: |
@@ -69,5 +70,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/zpace.rb
-          git diff --cached --quiet || git commit -m "Update zpace to ${{ steps.version.outputs.version }} [automated: update-formula workflow]"
-          git push
+          if git diff --cached --quiet; then
+            echo "Formula is already up to date for zpace ${{ steps.version.outputs.version }}, nothing to commit."
+            echo "Current formula:"
+            cat Formula/zpace.rb
+          else
+            git --no-pager diff --cached
+            git commit -m "Update zpace to ${{ steps.version.outputs.version }} [automated: update-formula workflow]"
+            git push
+          fi
