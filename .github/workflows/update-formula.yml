@@ -27,7 +27,7 @@ jobs:
           elif [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION=$(curl -sf https://pypi.org/pypi/zpace/json | jq -r '.info.version')
+            VERSION=$(curl -sSf https://pypi.org/pypi/zpace/json | jq -r '.info.version')
           fi
           [ -n "$VERSION" ] || { echo "Failed to determine version"; exit 1; }
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -38,7 +38,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
 
           # Get zpace SHA256 from PyPI
-          ZPACE_SHA256=$(curl -sf https://pypi.org/pypi/zpace/${VERSION}/json | \
+          ZPACE_SHA256=$(curl -sSf https://pypi.org/pypi/zpace/${VERSION}/json | \
             jq -r '.urls[] | select(.packagetype == "sdist") | .digests.sha256')
           [ -n "$ZPACE_SHA256" ] || { echo "Failed to get zpace SHA256"; exit 1; }
 
