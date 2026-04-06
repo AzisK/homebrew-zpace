@@ -19,7 +19,7 @@ def get_resource_blocks(package: str, version: Optional[str] = None) -> str:
     pkg_spec = f"{package}=={version}" if version else package
     result = subprocess.run(
         ["uvx", "--from", "homebrew-pypi-poet", "--with", pkg_spec, "poet", package],
-        capture_output=True,
+        stdout=subprocess.PIPE,
         text=True,
         check=True,
     )
