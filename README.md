@@ -75,23 +75,22 @@ For more information, visit the [Zpace repository](https://github.com/AzisK/Zpac
 
 ## Maintaining the Formula
 
-When a new version of zpace is released, the formula is updated with the new version URL, checksum, and Python dependency resource blocks via GHA workflow dispatch. It can also be triggered via GHA or ran locally'
-
-### Trigger on GitHub Actions
-
-Trigger the [Update Formula](../../actions/workflows/update-formula.yml) workflow manually from the Actions tab, optionally providing a version number. If left blank, it picks up the latest version from PyPI.
+When a new version of zpace is released, a `repository_dispatch` event triggers the [Update Formula](../../actions/workflows/update-formula.yml) workflow automatically. It can also be triggered manually from the Actions tab with an optional version number.
 
 The workflow:
 1. Updates the zpace `url` and `sha256` in the formula
-2. Uses [homebrew-pypi-poet](https://github.com/tdsmith/homebrew-pypi-poet) to regenerate all resource blocks from a clean virtualenv
-3. Commits and pushes the result
+2. Installs zpace into a clean virtualenv with `uv` and resolves all dependencies
+3. Fetches each dependency's sdist URL and sha256 from the PyPI JSON API
+4. Rewrites the resource blocks in the formula
+5. Smoke-tests the PyPI package with `uvx "zpace==<version>" --help`
+6. Commits and pushes the result (or prints the current formula if already up to date)
 
 ### Locally
 
-Requires `uv`, `curl`, and `jq`.
+Requires [`uv`](https://github.com/astral-sh/uv), `curl`, and `jq`.
 
 ```bash
-# Update to the latest version
+# Update to the latest version on PyPI
 ./scripts/update-formula.sh
 
 # Update to a specific version
