@@ -9,9 +9,13 @@ class Zpace < Formula
 
   depends_on "python"
 
+  resource "tqdm" do
+    url "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz"
+    sha256 "7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb"
+  end
+
   def install
-    venv = virtualenv_create(libexec, "python3")
-    venv.pip_install_and_link buildpath
+    virtualenv_install_with_resources
   end
 
   test do

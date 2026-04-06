@@ -32,21 +32,37 @@ jobs:
           [ -n "$VERSION" ] || { echo "Failed to determine version"; exit 1; }
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          python-version: "3.12"
+
       - name: Update formula
         run: |
           set -e
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Get zpace SHA256 from PyPI
-          ZPACE_SHA256=$(curl -sSf https://pypi.org/pypi/zpace/${VERSION}/json | \
-            jq -r '.urls[] | select(.packagetype == "sdist") | .digests.sha256')
+          # Get zpace sdist URL and SHA256 from PyPI
+          ZPACE_INFO=$(curl -sSf "https://pypi.org/pypi/zpace/${VERSION}/json")
+          ZPACE_SHA256=$(echo "$ZPACE_INFO" | jq -r '.urls[] | select(.packagetype == "sdist") | .digests.sha256')
           [ -n "$ZPACE_SHA256" ] || { echo "Failed to get zpace SHA256"; exit 1; }
 
-          # Update zpace version in URL and its sha256
-          sed -i "s|zpace-[0-9.]*\.tar\.gz|zpace-${VERSION}.tar.gz|" Formula/zpace.rb
-          sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${ZPACE_SHA256}\"|" Formula/zpace.rb
+          # Update zpace version in URL (anchored to url line to avoid matching resource URLs)
+          sed -i "/^  url/s|zpace-[0-9.]*\.tar\.gz|zpace-${VERSION}.tar.gz|" Formula/zpace.rb
 
-          echo "Updated zpace to ${VERSION}"
+          # Update only the first sha256 line (the package itself, not resources)
+          awk -v sha="$ZPACE_SHA256" '
+            !done && /^  sha256 "/ { print "  sha256 \"" sha "\""; done=1; next }
+            { print }
+          ' Formula/zpace.rb > Formula/zpace.rb.tmp && mv Formula/zpace.rb.tmp Formula/zpace.rb
+
+          echo "Updated zpace URL and sha256 to ${VERSION}"
+
+      - name: Regenerate resource blocks
+        run: python3 .github/scripts/update_resources.py zpace Formula/zpace.rb "${{ steps.version.outputs.version }}"
+
+      - name: Smoke test zpace
+        run: uvx "zpace==${{ steps.version.outputs.version }}" --help
 
       - name: Commit and push
         run: |
