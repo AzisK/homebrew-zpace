@@ -75,6 +75,9 @@ def update_formula(formula_path: str, resource_blocks: str) -> None:
         flags=re.DOTALL,
     )
 
+    # Normalise any double blank lines left by removal/insertion
+    content = re.sub(r'\n{3,}', '\n\n', content)
+
     with open(formula_path, "w") as f:
         f.write(content)
 

@@ -129,6 +129,23 @@ def test_awk_updates_only_package_sha256(tmp_path):
 
 
 # ------------------------------------------------------------------ #
+# Idempotency: running the update twice produces identical output
+# ------------------------------------------------------------------ #
+def test_idempotent(tmp_path):
+    result1 = apply(FORMULA_BASE, POET_OUTPUT, tmp_path)
+    result2 = apply(result1, POET_OUTPUT, tmp_path)
+    assert result1 == result2, "update_formula is not idempotent"
+
+
+# ------------------------------------------------------------------ #
+# No double blank lines anywhere in the output
+# ------------------------------------------------------------------ #
+def test_no_double_blank_lines(tmp_path):
+    result = apply(FORMULA_BASE, POET_OUTPUT, tmp_path)
+    assert "\n\n\n" not in result, "double blank line found in formula output"
+
+
+# ------------------------------------------------------------------ #
 # sed anchor: resource URLs containing zpace-X.Y.Z.tar.gz are untouched
 # ------------------------------------------------------------------ #
 def test_sed_anchor_does_not_corrupt_resource_urls(tmp_path):
