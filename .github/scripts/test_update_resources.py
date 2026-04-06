@@ -33,11 +33,12 @@ FORMULA_BASE = textwrap.dedent("""\
     end
 """)
 
-POET_OUTPUT = textwrap.dedent("""\
-  resource "tqdm" do
-    url "https://files.pythonhosted.org/packages/tqdm-4.67.3.tar.gz"
-    sha256 "deadbeef"
-  end""")
+POET_OUTPUT = (
+    '  resource "tqdm" do\n'
+    '    url "https://files.pythonhosted.org/packages/tqdm-4.67.3.tar.gz"\n'
+    '    sha256 "deadbeef"\n'
+    '  end'
+)
 
 
 def apply(formula: str, blocks: str, tmp_path: Path) -> str:
@@ -48,12 +49,15 @@ def apply(formula: str, blocks: str, tmp_path: Path) -> str:
 
 
 # ------------------------------------------------------------------ #
-# Indentation: poet output is already indented — must not double-indent
+# Indentation: resource blocks must use correct 2/4-space indentation
 # ------------------------------------------------------------------ #
-def test_resource_indentation_is_two_spaces(tmp_path):
+def test_resource_indentation_is_correct(tmp_path):
     result = apply(FORMULA_BASE, POET_OUTPUT, tmp_path)
-    assert '  resource "tqdm" do' in result, "resource block missing"
-    assert '    resource "tqdm" do' not in result, "resource block is double-indented"
+    assert '  resource "tqdm" do' in result, "resource line should have 2-space indent"
+    assert '    url "' in result,            "url line should have 4-space indent"
+    assert '    sha256 "' in result,         "sha256 line should have 4-space indent"
+    assert '    resource "tqdm" do' not in result, "resource line must not be double-indented"
+    assert '      url "' not in result,      "url line must not be double-indented"
 
 
 # ------------------------------------------------------------------ #

@@ -8,22 +8,48 @@ Example:
     python update_resources.py zpace Formula/zpace.rb 0.6.0
 """
 
+import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
+import urllib.request
 from typing import Optional
 
 
 def get_resource_blocks(package: str, version: Optional[str] = None) -> str:
     pkg_spec = f"{package}=={version}" if version else package
-    result = subprocess.run(
-        ["uvx", "--from", "homebrew-pypi-poet", "--with", pkg_spec, "poet", package],
-        stdout=subprocess.PIPE,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        venv = os.path.join(tmpdir, "venv")
+        subprocess.run(["uv", "venv", venv], check=True, capture_output=True)
+        subprocess.run(
+            ["uv", "pip", "install", "--python", venv, pkg_spec],
+            check=True,
+            capture_output=True,
+        )
+        installed = json.loads(subprocess.run(
+            ["uv", "pip", "list", "--python", venv, "--format", "json"],
+            capture_output=True, text=True, check=True,
+        ).stdout)
+
+    blocks = []
+    for dep in installed:
+        name, dep_version = dep["name"], dep["version"]
+        if name.lower() == package.lower():
+            continue
+        with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{dep_version}/json") as resp:
+            urls = json.loads(resp.read())["urls"]
+        sdist = next((u for u in urls if u["packagetype"] == "sdist"), None)
+        if not sdist:
+            raise RuntimeError(f"No sdist found for {name}=={dep_version} on PyPI")
+        blocks.append(
+            f'  resource "{name}" do\n'
+            f'    url "{sdist["url"]}"\n'
+            f'    sha256 "{sdist["digests"]["sha256"]}"\n'
+            f'  end'
+        )
+    return "\n\n".join(blocks)
 
 
 def update_formula(formula_path: str, resource_blocks: str) -> None:
@@ -38,8 +64,7 @@ def update_formula(formula_path: str, resource_blocks: str) -> None:
     )
 
     # Insert new resource blocks before def install
-    indented = "\n".join(f"  {line.lstrip()}" if line.strip() else "" for line in resource_blocks.splitlines())
-    content = content.replace("\n  def install", f"\n{indented}\n\n  def install", 1)
+    content = content.replace("\n  def install", f"\n{resource_blocks}\n\n  def install", 1)
 
     # Ensure virtualenv_install_with_resources pattern is used
     content = re.sub(
